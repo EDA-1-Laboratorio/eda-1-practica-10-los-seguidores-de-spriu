@@ -40,14 +40,19 @@ def insertion_sort_metricas(arr: list) -> tuple:
         llave = arr[i]
         j = i - 1
 
-        # TODO: mientras j >= 0 y arr[j] > llave:
-        #           - incrementa comparaciones
-        #           - desplaza arr[j] a arr[j+1], incrementa movimientos
-        #           - decrement j
+        # Mientras el elemento a la izquierda sea mayor que la llave
+        while j >= 0:
+            comparaciones += 1
+            if arr[j] > llave:
+                arr[j + 1] = arr[j] # Desplazamiento
+                movimientos += 1
+                j -= 1
+            else:
+                # Si arr[j] <= llave, el bucle termina, pero la comparación ya se contó
+                break
 
-        # TODO: cuenta la comparación que termina el while (si j >= 0)
-
-        # TODO: coloca llave en arr[j + 1] e incrementa movimientos
+        arr[j + 1] = llave
+        movimientos += 1
 
     tiempo = time.perf_counter() - inicio
     return (arr, comparaciones, movimientos, tiempo)
@@ -58,44 +63,35 @@ def insertion_sort_metricas(arr: list) -> tuple:
 # ---------------------------------------------------------------------------
 
 def generar_arreglo(n: int, escenario: str) -> list:
-    """
-    Genera un arreglo de tamaño n según el escenario indicado.
-
-    Escenarios:
-        'mejor'    -> ya ordenado de menor a mayor    (mejor caso: Θ(n))
-        'peor'     -> inversamente ordenado            (peor caso:  Θ(n²))
-        'promedio' -> aleatorio                        (caso promedio: Θ(n²))
-
-    Pistas:
-        list(range(n))           arreglo [0, 1, 2, ..., n-1]
-        list(range(n, 0, -1))    arreglo [n, n-1, ..., 1]
-        random.shuffle(arr)      mezcla in-place
-    """
-    # TODO: implementa los tres escenarios; lanza ValueError si escenario es inválido.
-    pass
+    if escenario == "mejor":
+        return list(range(n))  # Arreglo ya ordenado
+    elif escenario == "peor":
+        return list(range(n, 0, -1))  # Arreglo ordenado en reversa
+    elif escenario == "promedio":
+        arr = list(range(n))
+        random.shuffle(arr)  # Arreglo con elementos en orden aleatorio
+        return arr
+    else:
+        raise ValueError(f"Escenario '{escenario}' no es valido.")
 
 
 def medir_escenarios(tamanos: list) -> list:
-    """
-    Para cada tamaño en 'tamanos' evalúa los tres escenarios e imprime resultados.
-
-    Retorna:
-        Lista de dicts: {tamano, escenario, comparaciones, movimientos, tiempo}
-    """
     resultados = []
     for n in tamanos:
         for escenario in ("mejor", "promedio", "peor"):
+            #Mensaje para indicar progreso
+            print(f"Procesando: Tamaño {n}, Escenario: {escenario}...", end="\r")
+
             arr = generar_arreglo(n, escenario)
-            # TODO: llama a insertion_sort_metricas y guarda el resultado.
-            # Estructura del dict:
-            # {
-            #   "tamano": n,
-            #   "escenario": escenario,
-            #   "comparaciones": ...,
-            #   "movimientos": ...,
-            #   "tiempo": ...
-            # }
-            pass
+            _, comps, movs, t = insertion_sort_metricas(arr)
+
+            resultados.append({
+                "tamano": n,
+                "escenario": escenario,
+                "comparaciones": comps,
+                "movimientos": movs,
+                "tiempo": t
+            })
     return resultados
 
 
@@ -104,9 +100,20 @@ def medir_escenarios(tamanos: list) -> list:
 # ---------------------------------------------------------------------------
 
 def _merge(izq: list, der: list) -> list:
-    """Combina dos listas ordenadas en una sola."""
-    # TODO: implementa la fusión estándar de merge sort.
-    pass
+    resultado = []
+    i = j = 0
+    
+    while i < len(izq) and j < len(der):
+        if izq[i] < der[j]:
+            resultado.append(izq[i])
+            i += 1
+        else:
+            resultado.append(der[j])
+            j += 1
+            
+    resultado.extend(izq[i:])
+    resultado.extend(der[j:])
+    return resultado
 
 
 def _merge_sort_hibrido(arr: list, umbral: int) -> list:
@@ -116,11 +123,14 @@ def _merge_sort_hibrido(arr: list, umbral: int) -> list:
     Si no, divide a la mitad y fusiona con _merge.
     """
     if len(arr) <= umbral:
-        # TODO: retorna insertion_sort_metricas(arr)[0]
-        pass
+        # Usamos la versión de insertion sort y tomamos solo el arreglo ordenado
+        return insertion_sort_metricas(arr)[0]
+
     mid = len(arr) // 2
-    # TODO: llama recursivamente y fusiona con _merge
-    pass
+    izq = _merge_sort_hibrido(arr[:mid], umbral)
+    der = _merge_sort_hibrido(arr[mid:], umbral)
+    
+    return _merge(izq, der)
 
 
 def insertion_sort_hibrido(arr: list, umbral: int = 32) -> list:
@@ -128,8 +138,7 @@ def insertion_sort_hibrido(arr: list, umbral: int = 32) -> list:
     Punto de entrada del ordenamiento híbrido.
     Retorna el arreglo ordenado.
     """
-    # TODO: llama a _merge_sort_hibrido
-    pass
+    return _merge_sort_hibrido(arr, umbral)
 
 
 # ---------------------------------------------------------------------------

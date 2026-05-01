@@ -12,7 +12,7 @@ Instrucciones
 # Problema A – Solución greedy
 # ---------------------------------------------------------------------------
 
-def cambio_greedy(monto: int, monedas: list) -> tuple | None:
+def cambio_greedy(monto: int, monedas: list[int]):
     """
     Resuelve el problema de cambio con la estrategia ávida:
     en cada paso usa la moneda de mayor valor que quepa.
@@ -31,9 +31,26 @@ def cambio_greedy(monto: int, monedas: list) -> tuple | None:
         restante = restante % moneda   (lo que sobra)
     """
     # TODO: 1. Ordena las monedas de mayor a menor.
+    ordenadas = sorted(monedas, reverse=True)
+    
+    usadas = []
+    total = 0
+    restante = monto
+
     # TODO: 2. Para cada denominación, toma tantas monedas como quepan.
+    for moneda in ordenadas:
+        if restante >= moneda:
+            cantidad = restante // moneda
+            restante = restante % moneda
+            usadas.extend([moneda] * cantidad)
+            total += cantidad
+
     # TODO: 3. Si el residuo final es 0, retorna (lista_de_monedas_usadas, total).
+    if restante == 0:
+        return (usadas, total)
+
     # TODO: 4. Si queda residuo, retorna None.
+    return None
     pass
 
 
@@ -41,7 +58,7 @@ def cambio_greedy(monto: int, monedas: list) -> tuple | None:
 # Problema B – Solución óptima por programación dinámica
 # ---------------------------------------------------------------------------
 
-def cambio_optimo_dp(monto: int, monedas: list) -> tuple | None:
+def cambio_optimo_dp(monto: int, monedas: list[int]):
     """
     Resuelve el problema de cambio de manera óptima usando
     programación dinámica (número mínimo de monedas).
@@ -57,9 +74,30 @@ def cambio_optimo_dp(monto: int, monedas: list) -> tuple | None:
         Guarda padre[i] = m que produjo dp[i] para reconstruir la solución.
     """
     # TODO: crea la tabla dp y la tabla padre con longitud monto + 1.
+    dp = [float('inf')] * (monto + 1)
+    padre = [None] * (monto + 1)
+    dp[0] = 0
+
     # TODO: llena la tabla recorriendo cada monto parcial de 1 a monto.
+    for i in range(1, monto + 1):
+        for moneda in monedas:
+            if moneda <= i and dp[i - moneda] + 1 < dp[i]:
+                dp[i] = dp[i - moneda] + 1
+                padre[i] = moneda
+
     # TODO: si dp[monto] es inf, retorna None.
+    if dp[monto] == float('inf'):
+        return None
+
     # TODO: reconstruye la lista de monedas usando padre[].
+    usadas = []
+    actual = monto
+    while actual > 0:
+        moneda_usada = padre[actual]
+        usadas.append(moneda_usada)
+        actual -= moneda_usada
+
+    return usadas, len(usadas)
     pass
 
 
@@ -78,9 +116,24 @@ def comparar_estrategias(monto_max: int, monedas: list) -> dict:
                                     donde greedy usa más monedas que DP.
     """
     # TODO: itera los montos, llama a cambio_greedy y cambio_optimo_dp.
-    # TODO: clasifica cada caso y acumula en las listas correspondientes.
-    pass
+    fallas = []
+    suboptimos = []
 
+    for m in range(1, monto_max + 1):
+        res_g = cambio_greedy(m, monedas)
+        res_d = cambio_optimo_dp(m, monedas)
+        # TODO: clasifica cada caso y acumula en las listas correspondientes.
+        if res_d is not None:
+            if res_g is None:
+                fallas.append(m)
+            elif res_g[1] > res_d[1]:
+                suboptimos.append((m, res_g[1], res_d[1]))
+
+    return {
+        'montos_greedy_falla': fallas,
+        'montos_greedy_suboptimo': suboptimos
+    }
+    pass
 
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
@@ -109,5 +162,12 @@ if __name__ == "__main__":
         print(f"  Casos con fallo  : {len(fal)}")
         if sub:
             print(f"  Primeros 5 subóptimos: {sub[:5]}")
+            print("\n === 10 casos donde greedy no es óptimo=== :")
+            for monto, total_greedy, total_dp in sub[:10]:
+                greedy = cambio_greedy(monto, no_canonicas)
+                dp = cambio_optimo_dp(monto, no_canonicas)
+                print(f" ★ Monto {monto}:")
+                print(f"    greedy: {greedy[0]} usa {total_greedy} monedas")
+                print(f"    dp: {dp[0]} usa {total_dp} monedas")
     else:
         print("  comparar_estrategias aún no implementada")
